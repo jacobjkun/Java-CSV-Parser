@@ -28,6 +28,9 @@ public class parser {
         
         BufferedReader reader = new BufferedReader(new FileReader(csvFilePath));
         String currentLine;
+        PrintWriter pw = new PrintWriter("badEntries.csv");
+        StringBuffer sb = new StringBuffer(); // might break something
+       
 
         try {
  
@@ -56,17 +59,27 @@ public class parser {
                   badEntries++;
                 //  System.out.println(Arrays.toString(lineString));
                  
-                try{
-                    CSVWriter writer = new CSVWriter(new FileWriter("badEntries.csv")); // writing empty strings for some reason
-                    List<String[]> csvData = new ArrayList<String[]>();
-                    csvData.add(lineString); 
-                    writer.writeAll(csvData);
-                    writer.close();
+                
+                    
+
+                    String result = "";
+
+                   for (int i = 0; i < lineString.length; i++){
+                     sb.append(lineString[i]);
+                        sb.append(",");
                     }
+                   sb.append("\n");
+                    
+                  //  CSVWriter writer = new CSVWriter(new FileWriter("badEntries.csv")); // writing empty strings for some reason
+                   // List<String[]> csvData = new ArrayList<String[]>();
+                    //csvData.add(lineString); 
+                    //writer.writeAll(csvData);
+                    //writer.close();
+                    
             
-            catch(FileNotFoundException e){
-                System.out.println(e.getMessage());
-            }
+           // catch(FileNotFoundException e){
+              //  System.out.println(e.getMessage());
+            //}
                 
             }
             else{ // otherwise prepare for sql
@@ -91,7 +104,8 @@ public class parser {
                     System.out.println("batch inserted");
                 }
             }
- 
+            pw.write(sb.toString());
+            pw.close();
             lineReader.close();
  
             // execute the remaining queries
