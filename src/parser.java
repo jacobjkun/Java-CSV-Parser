@@ -5,24 +5,79 @@ import com.opencsv.*;
 
 public class parser {
     public static void main(final String[] args) throws IOException {
-        final String url = "jdbc:sqlite:C://sqlite/db/ms3Interview_Jr_Challenge_2.db";
-        int badEntries = 0;
+     //   final String url = "jdbc:sqlite:C://sqlite/db/ms3Interview_Jr_Challenge_2.db";
+        String fileName = "";
+        String filePath = "";
  
-        final String csvFilePath = "C:\\users\\jacob\\downloads\\ms3Interview_Jr_Challenge_2.csv";
- 
-        final int batchSize = 1000;
- 
-        Connection connection = null;
+     //   final String csvFilePath = "C:\\users\\jacob\\downloads\\ms3Interview_Jr_Challenge_2.csv";
 
-        createNewDatabase("ms3Interview_Jr_Challenge_2");
-        createNewTable("ms3Interview_Jr_Challenge_2");
+        Scanner input = new Scanner(System.in);
+        System.out.println("Please enter the path to the folder containing the .csv file (please use \\\\ example: C:\\\\users\\\\yourUsername\\\\downloads\\\\): ");
+        filePath = input.nextLine(); 
+        System.out.println("Please enter the .csv file name, including the extension: ");
+        fileName = input.nextLine(); 
+        String csvFilePath = filePath + fileName;
+        String url = "jdbc:sqlite:C:\\sqlite\\db\\" + removeExtension(fileName) + ".db";
+        input.close();
+
+ 
+       
+
+        createNewDatabase(fileName, url);
+        createNewTable(fileName);
+        insertEntries(csvFilePath, url, removeExtension(fileName));
         
+        
+ 
+}
+
+    public static void createNewDatabase(String fileName, String url) {
+
+        fileName = removeExtension(fileName);
+       // final String url = "jdbc:sqlite:C:/sqlite/db/" + fileName + ".db";
+
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (conn != null) {
+                final DatabaseMetaData meta = conn.getMetaData();
+                System.out.println("The driver name is " + meta.getDriverName());
+                System.out.println("A new database has been created.");
+            }
+
+        } catch (final SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public static void createNewTable(String fileName) {
+        fileName = removeExtension(fileName);
+        final String url = "jdbc:sqlite:C://sqlite/db/" + fileName + ".db";
+        // SQL statement for creating a new table
+        final String sql = "CREATE TABLE IF NOT EXISTS People (\n" + "	A varchar,\n" + "	B varchar,\n"
+                + "	C varchar,\n" + "	D varchar,\n" + "	E image,\n" + "	F varchar,\n" + "	G varchar,\n"
+                + "	H varchar,\n" + "	I varchar,\n" + "	J varchar\n" + ");";
+
+        try (Connection conn = DriverManager.getConnection(url); Statement stmt = conn.createStatement()) {
+            // create a new table
+            stmt.execute(sql);
+            System.out.println("Table Created");
+        } catch (final SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+
+    public static void insertEntries(String csvFilePath, String url, String fileName ) throws IOException { 
         final String sql = "INSERT INTO People (A,B,C,D,E,F,G,H,I,J) VALUES (?,?,?,?,?,?,?,?,?,?)";
         // SQL statement for creating a new table
+        int batchSize = 1000;
+        int entriesRecieved = 0;
+        int badEntries = 0;
+        int goodEntries = 0;
+        Connection connection = null;
         
-        BufferedReader reader = new BufferedReader(new FileReader(csvFilePath));
-        PrintWriter pw = new PrintWriter("badEntries.csv");
-        FileWriter outputFile = new FileWriter("badEntries.csv");
+      //  BufferedReader reader = new BufferedReader(new FileReader(csvFilePath));
+        PrintWriter pw = new PrintWriter(fileName + "-bad.csv");
+        FileWriter outputFile = new FileWriter(fileName + "-bad.csv");
         CSVWriter writer = new CSVWriter(outputFile);
        
 
@@ -45,6 +100,7 @@ public class parser {
 
             while ((lineText = lineReader.readLine()) != null) {
                 String[] lineString = lineText.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+                entriesRecieved++;
                 boolean goodEntrie = true;
 
                 for(int i = 0; i < lineString.length; i++){
@@ -55,10 +111,11 @@ public class parser {
 
                 if (goodEntrie == false){
                     writer.writeNext(lineString);
+                    badEntries++; // if it has a empty column
                 }
 
                 else if(lineString.length != 10){ // testing for bad entries that have extra columns
-                  badEntries++;
+                  badEntries++; // if there are extra entries
                 writer.writeNext(lineString);
             }
 
@@ -75,6 +132,7 @@ public class parser {
                 ps.setString(10, lineString[9]);
                 ps.addBatch();
                 count++;
+                goodEntries++;
             }
  
                 if (count % batchSize == 0) { // excutes a batch every 1000 instructions
@@ -97,40 +155,17 @@ public class parser {
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
- 
-}
-
-    public static void createNewDatabase(final String fileName) {
-
-        final String url = "jdbc:sqlite:C:/sqlite/db/" + fileName + ".db";
-
-        try (Connection conn = DriverManager.getConnection(url)) {
-            if (conn != null) {
-                final DatabaseMetaData meta = conn.getMetaData();
-                System.out.println("The driver name is " + meta.getDriverName());
-                System.out.println("A new database has been created.");
-            }
-
-        } catch (final SQLException e) {
-            System.out.println(e.getMessage());
-        }
+        BufferedWriter logWriter = new BufferedWriter(new FileWriter(fileName + ".log"));
+        logWriter.write("Entries Recieved: " + entriesRecieved + "\nGood Entries: " + goodEntries + "\nBad Entries: " + badEntries);
+        logWriter.close();
     }
-
-    public static void createNewTable(final String fileName) {
-        final String url = "jdbc:sqlite:C://sqlite/db/" + fileName + ".db";
-        // SQL statement for creating a new table
-        final String sql = "CREATE TABLE IF NOT EXISTS People (\n" + "	A varchar,\n" + "	B varchar,\n"
-                + "	C varchar,\n" + "	D varchar,\n" + "	E image,\n" + "	F varchar,\n" + "	G varchar,\n"
-                + "	H varchar,\n" + "	I varchar,\n" + "	J varchar\n" + ");";
-
-        try (Connection conn = DriverManager.getConnection(url); Statement stmt = conn.createStatement()) {
-            // create a new table
-            stmt.execute(sql);
-            System.out.println("Table Created");
-        } catch (final SQLException e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
     
+    public static String removeExtension(String fname) { //used to remove the .csv for naming purpouses
+        int pos = fname.lastIndexOf('.');
+        if(pos > -1)
+           return fname.substring(0, pos);
+        else
+           return fname;
+     }
+
 }
