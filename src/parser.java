@@ -3,12 +3,9 @@ import java.sql.*;
 import java.util.*;
 import com.opencsv.*;
 
-//import com.opencsv.CSVWriter;
 public class parser {
     public static void main(final String[] args) throws IOException {
         final String url = "jdbc:sqlite:C://sqlite/db/ms3Interview_Jr_Challenge_2.db";
-        final String username = "user";
-        final String password = "password";
         int badEntries = 0;
  
         final String csvFilePath = "C:\\users\\jacob\\downloads\\ms3Interview_Jr_Challenge_2.csv";
@@ -19,17 +16,14 @@ public class parser {
 
         createNewDatabase("ms3Interview_Jr_Challenge_2");
         createNewTable("ms3Interview_Jr_Challenge_2");
- 
-        int batchNum = 100;
-        int turn = 1;
         
         final String sql = "INSERT INTO People (A,B,C,D,E,F,G,H,I,J) VALUES (?,?,?,?,?,?,?,?,?,?)";
         // SQL statement for creating a new table
         
         BufferedReader reader = new BufferedReader(new FileReader(csvFilePath));
-        String currentLine;
         PrintWriter pw = new PrintWriter("badEntries.csv");
-        StringBuffer sb = new StringBuffer(); // might break something
+        FileWriter outputFile = new FileWriter("badEntries.csv");
+        CSVWriter writer = new CSVWriter(outputFile);
        
 
         try {
@@ -46,43 +40,29 @@ public class parser {
             int count = 0;
  
             lineReader.readLine(); // skip header line
- 
+            String[] header = { "A", "B", "C","D","E","F","G","H","I","J" }; 
+            writer.writeNext(header); 
+
             while ((lineText = lineReader.readLine()) != null) {
                 String[] lineString = lineText.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-             
+                boolean goodEntrie = true;
+
                 for(int i = 0; i < lineString.length; i++){
-                    if (lineString[i] == "")
-                    lineReader.readLine();
+                    if (lineString[i].equals("")){
+                    goodEntrie = false;
+                    }
                 }
 
-                if(lineString.length != 10){ // testing for bad entries that have extra columns
+                if (goodEntrie == false){
+                    writer.writeNext(lineString);
+                }
+
+                else if(lineString.length != 10){ // testing for bad entries that have extra columns
                   badEntries++;
-                //  System.out.println(Arrays.toString(lineString));
-                 
-                
-                    
-
-                    String result = "";
-
-                   for (int i = 0; i < lineString.length; i++){
-                     sb.append(lineString[i]);
-                        sb.append(",");
-                    }
-                   sb.append("\n");
-                    
-                  //  CSVWriter writer = new CSVWriter(new FileWriter("badEntries.csv")); // writing empty strings for some reason
-                   // List<String[]> csvData = new ArrayList<String[]>();
-                    //csvData.add(lineString); 
-                    //writer.writeAll(csvData);
-                    //writer.close();
-                    
-            
-           // catch(FileNotFoundException e){
-              //  System.out.println(e.getMessage());
-            //}
-                
+                writer.writeNext(lineString);
             }
-            else{ // otherwise prepare for sql
+
+            else { // otherwise prepare for sql
                 ps.setString(1, lineString[0]);
                 ps.setString(2, lineString[1]);
                 ps.setString(3, lineString[2]);
@@ -96,23 +76,21 @@ public class parser {
                 ps.addBatch();
                 count++;
             }
-               // System.out.println(count);
-               // System.out.println("line inserted");
  
-                if (count % batchSize == 0) {
+                if (count % batchSize == 0) { // excutes a batch every 1000 instructions
                     ps.executeBatch();
                     System.out.println("batch inserted");
                 }
             }
-            pw.write(sb.toString());
             pw.close();
+            writer.close();
             lineReader.close();
  
-            // execute the remaining queries
+            // execute the remaining queries not in a previous batch
             ps.executeBatch();
  
             connection.commit();
-            connection.close();
+            connection.close(); // close sql connection
  
         } catch (IOException ex) {
             System.err.println(ex);
@@ -139,7 +117,6 @@ public class parser {
     }
 
     public static void createNewTable(final String fileName) {
-        // SQLite connection string
         final String url = "jdbc:sqlite:C://sqlite/db/" + fileName + ".db";
         // SQL statement for creating a new table
         final String sql = "CREATE TABLE IF NOT EXISTS People (\n" + "	A varchar,\n" + "	B varchar,\n"
@@ -155,39 +132,5 @@ public class parser {
         }
     }
 
-    public static void writeToTable(final String dbName, final String[] lineString) {
-        final int batchNum = 100;
-        final int turn = 1;
-        // SQLite connection string
-        final String url = "jdbc:sqlite:C://sqlite/db/" + dbName + ".db";
-        final String sql = "INSERT INTO People (A,B,C,D,E,F,G,H,I,J) VALUES (?,?,?,?,?,?,?,?,?,?)";
-        // SQL statement for creating a new table
-
-        try (Connection conn = DriverManager.getConnection(url); PreparedStatement ps = conn.prepareStatement(sql);) {
-            ps.setString(1, lineString[0]);
-            ps.setString(2, lineString[1]);
-            ps.setString(3, lineString[2]);
-            ps.setString(4, lineString[3]);
-            ps.setString(5, lineString[4]);
-            ps.setString(6, lineString[5]);
-            ps.setString(7, lineString[6]);
-            ps.setString(8, lineString[7]);
-            ps.setString(9, lineString[8]);
-            ps.setString(10, lineString[9]);
-            ps.executeUpdate();
-            System.out.println("line inserted");
-
-            
-            // batchNum++;
-            // turn++;
-
-            // if (turn % batchNum == 0){
-            // ps.executeBatch();
-            // System.out.println("batch Inserted");
-            // }
-            //
-        } catch (final SQLException e) {
-            System.out.println(e.getMessage());
-        }
-    }
+    
 }
