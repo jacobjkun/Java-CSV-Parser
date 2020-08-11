@@ -3,13 +3,18 @@ import java.sql.*;
 import java.util.*;
 import com.opencsv.*;
 
+/*
+Jacob Kokai-Kun, MS3 jr coding challenge 8/11/2020
+This project is designed to take in a user's csv file and convert it to an SQLite Database
+*/
+
 public class parser {
     public static void main(final String[] args) throws IOException {
      //   final String url = "jdbc:sqlite:C://sqlite/db/ms3Interview_Jr_Challenge_2.db";
         String fileName = "";
         String filePath = "";
  
-     //   final String csvFilePath = "C:\\users\\jacob\\downloads\\ms3Interview_Jr_Challenge_2.csv";
+     
 
         Scanner input = new Scanner(System.in);
         System.out.println("Please enter the path to the folder containing the .csv file (please use \\\\ example: C:\\\\users\\\\yourUsername\\\\downloads\\\\): ");
@@ -52,13 +57,16 @@ public class parser {
         fileName = removeExtension(fileName);
         final String url = "jdbc:sqlite:C://sqlite/db/" + fileName + ".db";
         // SQL statement for creating a new table
+        final String deleteSql = "DROP TABLE IF EXISTS `People`;"; // this is used to clear the table if it already exist;
         final String sql = "CREATE TABLE IF NOT EXISTS People (\n" + "	A varchar,\n" + "	B varchar,\n"
                 + "	C varchar,\n" + "	D varchar,\n" + "	E image,\n" + "	F varchar,\n" + "	G varchar,\n"
                 + "	H varchar,\n" + "	I varchar,\n" + "	J varchar\n" + ");";
 
         try (Connection conn = DriverManager.getConnection(url); Statement stmt = conn.createStatement()) {
             // create a new table
+            stmt.execute(deleteSql);
             stmt.execute(sql);
+            
             System.out.println("Table Created: People");
         } catch (final SQLException e) {
             System.out.println(e.getMessage());
@@ -68,15 +76,12 @@ public class parser {
 
     public static void insertEntries(String csvFilePath, String url, String fileName ) throws IOException { 
         final String sql = "INSERT INTO People (A,B,C,D,E,F,G,H,I,J) VALUES (?,?,?,?,?,?,?,?,?,?)";
-        //final String sql = "INSERT INTO People (A,B,C,D,E,F,G,H,I,J) VALUES (?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE A = @A, B = @B,C = @c, D = @D, E = @E, F = @F, G = @G , H = @H , I = @I ,J = @J";
-        // SQL statement for creating a new table
         int batchSize = 1000;
         int entriesRecieved = 0;
         int badEntries = 0;
         int goodEntries = 0;
         Connection connection = null;
         
-      //  BufferedReader reader = new BufferedReader(new FileReader(csvFilePath));
         PrintWriter pw = new PrintWriter(fileName + "-bad.csv");
         FileWriter outputFile = new FileWriter(fileName + "-bad.csv");
         CSVWriter writer = new CSVWriter(outputFile);
