@@ -1,7 +1,9 @@
 import java.io.*;
 import java.sql.*;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import com.opencsv.*;
+
+//import com.opencsv.CSVWriter;
 public class parser {
     public static void main(final String[] args) throws IOException {
         final String url = "jdbc:sqlite:C://sqlite/db/ms3Interview_Jr_Challenge_2.db";
@@ -45,14 +47,27 @@ public class parser {
             while ((lineText = lineReader.readLine()) != null) {
                 String[] lineString = lineText.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
              
+                for(int i = 0; i < lineString.length; i++){
+                    if (lineString[i] == "")
+                    lineReader.readLine();
+                }
+
                 if(lineString.length != 10){ // testing for bad entries that have extra columns
                   badEntries++;
-                    try (PrintWriter writer = new PrintWriter(new File("test.txt"))) {
-                        StringBuilder sb = new StringBuilder();
-                        sb.append(lineText);
-                        writer.write(sb.toString());
-                        lineText = lineReader.readLine(); // skip if bad entrie
-                }
+                //  System.out.println(Arrays.toString(lineString));
+                 
+                try{
+                    CSVWriter writer = new CSVWriter(new FileWriter("badEntries.csv")); // writing empty strings for some reason
+                    List<String[]> csvData = new ArrayList<String[]>();
+                    csvData.add(lineString); 
+                    writer.writeAll(csvData);
+                    writer.close();
+                    }
+            
+            catch(FileNotFoundException e){
+                System.out.println(e.getMessage());
+            }
+                
             }
             else{ // otherwise prepare for sql
                 ps.setString(1, lineString[0]);
@@ -148,6 +163,7 @@ public class parser {
             ps.executeUpdate();
             System.out.println("line inserted");
 
+            
             // batchNum++;
             // turn++;
 
