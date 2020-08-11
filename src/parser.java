@@ -59,7 +59,7 @@ public class parser {
         try (Connection conn = DriverManager.getConnection(url); Statement stmt = conn.createStatement()) {
             // create a new table
             stmt.execute(sql);
-            System.out.println("Table Created");
+            System.out.println("Table Created: People");
         } catch (final SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -68,6 +68,7 @@ public class parser {
 
     public static void insertEntries(String csvFilePath, String url, String fileName ) throws IOException { 
         final String sql = "INSERT INTO People (A,B,C,D,E,F,G,H,I,J) VALUES (?,?,?,?,?,?,?,?,?,?)";
+        //final String sql = "INSERT INTO People (A,B,C,D,E,F,G,H,I,J) VALUES (?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE A = @A, B = @B,C = @c, D = @D, E = @E, F = @F, G = @G , H = @H , I = @I ,J = @J";
         // SQL statement for creating a new table
         int batchSize = 1000;
         int entriesRecieved = 0;
